@@ -1996,74 +1996,75 @@
                 var url = 'http://127.0.0.1:3030/';
                 var params = constructTable();
 
-                var temp = document.createElement("form");
-                temp.action = url;
-                temp.method = "post";
+                var formData = new FormData();
 
-                var opt = document.createElement("textarea");
-                opt.name = "save";
-                if (saveNameDom.value == "请输入保存文件名") {
-                    opt.value = "默认设置"
-                } else {
-                    opt.value = saveNameDom.value;
+                // header (save = "save file name")
+                var savedFile = "默认设置"
+                if (saveNameDom.value != "请输入保存文件名") {
+                    savedFile = saveNameDom.value;
+                }
+                formData.append("save", savedFile);
+
+                // data (ew)                
+                var ew = [];
+                params.forEach((item) => {
+                    ew.push(item[2]);
+                });
+                formData.append("ew", JSON.stringify(ew));
+
+                // data(yy)
+                var yy = [];
+                params.forEach((item) => {
+                    yy.push(item[3]);
+                });
+                formData.append("yy", JSON.stringify(yy));
+
+                var request = new XMLHttpRequest();
+                request.open("POST", url);
+
+                request.onload = function () {
+                    if (request.readyState === request.DONE) {
+                        if (request.status == 200) {
+                            alert("保存成功！点击确认刷新页面！");
+                            location.reload(true);
+                        }
+                    }
                 }
 
-                temp.appendChild(opt);
-
-                var opt = document.createElement("textarea");
-                opt.name = "ew";
-                opt.value = "true";
-                temp.appendChild(opt);
-
-                for (var x in params) {
-                    var opt = document.createElement("textarea");
-                    opt.name = x;
-                    opt.value = params[x][2];
-                    temp.appendChild(opt);
-                }
-
-                var opt = document.createElement("textarea");
-                opt.name = "yy";
-                opt.value = "true";
-                temp.appendChild(opt);
-
-                for (var x in params) {
-                    var opt = document.createElement("textarea");
-                    opt.name = x;
-                    opt.value = params[x][3];
-                    temp.appendChild(opt);
-                }
-
-                var opt = document.createElement("textarea");
-                opt.name = "end";
-                opt.value = "true";
-
-                temp.appendChild(opt);
-
-                document.body.appendChild(temp);
-                temp.submit();
+                request.send(formData);
             }
 
             loadDom.onclick = function () {
                 if (filesDom.value != "") {
                     var url = 'http://127.0.0.1:3030/';
 
-                    var temp = document.createElement("form");
-                    temp.action = url;
-                    temp.method = "post";
+                    var formData = new FormData();
+                    loadedFile = filesDom.value;
+                    formData.append("load", loadedFile);
 
-                    var opt = document.createElement("textarea");
-                    opt.name = "load";
-                    opt.value = filesDom.value;
-                    temp.appendChild(opt);
+                    var request = new XMLHttpRequest();
+                    request.open("POST", url);
 
-                    var opt = document.createElement("textarea");
-                    opt.name = "end";
-                    opt.value = "true";
-                    temp.appendChild(opt);
-                    
-                    document.body.appendChild(temp);
-                    temp.submit();
+                    request.onload = function () {
+                        if (request.readyState === request.DONE) {
+                            if (request.status == 200) {
+                                let response = request.responseText.split("\r\n");
+
+                                let ew = JSON.parse(response[0]);
+                                let yy = JSON.parse(response[1]);
+                                for (var i = 0; i < ew.length; i++) {
+                                    clValue[i].value = "0";
+                                    jqValue[i].value = "0";
+                                    ewValue[i].value = ew[i];
+                                    yyValue[i].value = yy[i];
+                                }
+
+                                updateTable();
+                            }
+                        }
+                    };
+
+                    request.send(formData);
                 }
             }
 
@@ -2654,7 +2655,7 @@
 
 
             function updateTable(has_supporter = true) {
-                var arr = constructTable()
+                let arr = constructTable()
                 for (var i = 0; i < n; i++) {
                     var productionAmount = arr[i][2]
                     produceResource(elementLayout[i], productionAmount, arr)
